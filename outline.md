@@ -1,6 +1,8 @@
 # WIBSY
 ### Will I Be Seeing You?
 
+
+# Dev Plan
 ## Stage 1
 Backend
 - Users can login, add friends, view friends, add travel schedules
@@ -17,8 +19,7 @@ Backend
     - Google stuff!
     - userdb: id, name, profile, username?, password??
 2. Friends
-    - friendsdb: userid1, userid2
-    - requestsdb: initiatoruserid, recieveruserid, date
+    - friendsdb: id, userid1, userid2, status
 3. Travel
     - traveldb: userid, destination, date, description
 4. Sharing
@@ -31,3 +32,35 @@ Backend
 - Flight animation?
 - Timeline
 - Multi in city??
+
+# Site Pages
+Home (Pre-login)
+- Register / Login options
+Home (Post-login)
+- No scroll
+- Central low poly globe with friend markers
+- Timeline controller bar on bottom
+- Friend list on left
+    - Toggle show
+    - Accept requests
+
+- Menu on top right
+    - Settings
+    - Profile settings
+    - Add travel
+    - Add friend
+    - Logout
+
+Login
+- Google vs email signin option
+
+Register
+- Google vs email registration option
+
+Add friend
+
+
+Add travel
+
+
+Profile settings

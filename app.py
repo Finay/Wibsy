@@ -12,9 +12,10 @@ from flask_login import (
     UserMixin,
 )
 from oauthlib.oauth2 import WebApplicationClient
+from google.oauth2 import id_token
+from google.auth.transport.requests import Request as GoogleRequest
 import requests
 from dotenv import load_dotenv
-
 
 load_dotenv()
 GOOGLE_CLIENT_ID = os.environ.get("GOOGLE_CLIENT_ID", None)
@@ -22,7 +23,6 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
 GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
-
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
@@ -37,10 +37,17 @@ login_manager.init_app(app)
 
 # User model
 class User(UserMixin, db.Model):
-    id = db.Column(db.String(50), primary_key=True)
-    username = db.Column(db.String(250), unique=True, nullable=False)
+    id = db.Column(db.Integer(), primary_key=True)
+    username = db.Column(db.String(250), nullable=False)
     email = db.Column(db.String(250), unique=True, nullable=False)
     password = db.Column(db.String(250), nullable=True)
+
+
+class FriendEntry(db.Model):
+    id = db.Column(db.Integer(), primary_key=True)
+    user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
+    friend_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
+    status = db.Column(db.String(10), nullable=False)  # 'pending', 'accepted', 'rejected'
 
 
 with app.app_context():
@@ -48,6 +55,10 @@ with app.app_context():
 
 
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
+
+
+def get_google_provider_cfg():
+    return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 
 # Flask-Login helper to retrieve a user from our db
@@ -63,79 +74,79 @@ def home():
     return redirect(url_for('login'))
 
 
-def get_google_provider_cfg():
-    return requests.get(GOOGLE_DISCOVERY_URL).json()
+@app.route('/register', methods = ['GET', 'POST'])
+def register():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
 
+    if request.method == 'POST':
+        username = request.form['username']
+        email = request.form['email']
+        password = request.form['password']
 
-@app.route("/login")
-def login():
-    # Find out what URL to hit for Google login
-    google_provider_cfg = get_google_provider_cfg()
-    authorization_endpoint = google_provider_cfg["authorization_endpoint"]
+        if User.query.filter_by(email=email).first():
+            return "Email already exists", 400
 
-    # Use library to construct the request for Google login and provide
-    # scopes that let you retrieve user's profile from Google
-    request_uri = client.prepare_request_uri(
-        authorization_endpoint,
-        redirect_uri=request.base_url + "/callback",
-        scope=["openid", "email", "profile"],
-    )
-    return redirect(request_uri)
-
-
-@app.route("/login/callback")
-def callback():
-    # Get authorization code Google sent back to you
-    code = request.args.get("code")
-
-    # Find out what URL to hit to get tokens that allow you to ask for
-    # things on behalf of a user
-    google_provider_cfg = get_google_provider_cfg()
-    token_endpoint = google_provider_cfg["token_endpoint"]
-
-    # Prepare and send a request to get tokens! Yay tokens!
-    token_url, headers, body = client.prepare_token_request(
-        token_endpoint,
-        authorization_response=request.url,
-        redirect_url=request.base_url,
-        code=code
-    )
-    token_response = requests.post(
-        token_url,
-        headers=headers,
-        data=body,
-        auth=(GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET),
-    )
-
-    # Parse the tokens!
-    client.parse_request_body_response(json.dumps(token_response.json()))
-
-    userinfo_endpoint = google_provider_cfg["userinfo_endpoint"]
-    uri, headers, body = client.add_token(userinfo_endpoint)
-    userinfo_response = requests.get(uri, headers=headers, data=body)
-
-    if userinfo_response.json().get("email_verified"):
-        unique_id = userinfo_response.json()["sub"]
-        users_email = userinfo_response.json()["email"]
-        users_name = userinfo_response.json()["given_name"]
-    else:
-        return "User email not available or not verified by Google.", 400
-
-    user = User(
-        id=unique_id, username=users_name, email=users_email
-    )
-
-    # Doesn't exist? Add it to the database.
-    if not User.query.get(unique_id):
-        db.session.add(user)
+        new_user = User(username=username, email=email, password=password)
+        db.session.add(new_user)
         db.session.commit()
-    login_user(user)
 
-    # Send user back to homepage
+        login_user(new_user)
+
+        return redirect(url_for('home'))
+    return render_template('pages/register.html')
+
+
+@app.route("/login", methods = ['GET', 'POST'])
+def login():
+    if current_user.is_authenticated:
+        return redirect(url_for('home'))
+    
+    if request.method == 'POST':
+        email = request.form['email']
+        password = request.form['password']
+
+        user_query = User.query.filter_by(email=email).first()
+
+        if not user_query:
+            return "No such email", 400
+        
+        if user_query.password != password:
+            return "Wrong password", 400
+
+        login_user(user_query)
+
+        return redirect(url_for('home'))
+    return render_template("pages/login.html")
+
+
+@app.route("/login/callback", methods = ['GET', 'POST'])
+def gl_callback():    
+    try:
+        idinfo = id_token.verify_oauth2_token(request.form['credential'], GoogleRequest(), GOOGLE_CLIENT_ID)
+
+        userid = int(idinfo['sub']) % (2**(8*2)) # TODO: Maybe do somethin about this
+    except ValueError:
+        return "Invalid token", 400
+
+    new_user = User(
+        id=userid, username=idinfo['name'], email=idinfo['email'], password=None
+    )
+
+    email_query = User.query.filter_by(email=idinfo['email']).first()
+    if email_query:
+        login_user(email_query)
+        return redirect(url_for("home"))
+
+    if not User.query.get(userid):
+        db.session.add(new_user)
+        db.session.commit()
+
+    login_user(new_user)
     return redirect(url_for("home"))
 
 
-@app.route("/logout")
+@app.route("/logout") # TODO: This ain't working lol
 @login_required
 def logout():
     logout_user()
