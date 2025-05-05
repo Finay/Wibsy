@@ -2,11 +2,27 @@
 <html lang="en">
 
 <head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
     <script src="https://accounts.google.com/gsi/client" async></script>
-
+    <script src="{{ url_for('static', filename='main.js') }}" defer></script>
+    <style>
+        #temp-nav {
+            width: 100%;
+            display: flex;
+            justify-content: space-around;
+        }
+    </style>
 </head>
 
 <body>
+    {% if current_user.is_authenticated %}
+    <div id="temp-nav">
+        <a href="{{ url_for('home') }}">Home</a>
+        <a href="{{ url_for('friends') }} ">Friends Page</a>
+        <a href="{{ url_for('travels') }}">travels</a>
+        <a href="{{ url_for('logout') }}">Logout</a>
+    </div>
+    {% endif %}
     {% block content %}
 
     {% endblock %}

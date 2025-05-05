@@ -1,0 +1,25 @@
+{% extends "layout.html" %}
+
+{% block content %}
+{% if user %}
+<h1>Entries for: {{ user.username }}</h1>
+{% endif %}
+<table>
+{% for entry in travel_data %}
+<tr>
+    <td>{{ entry.destination }}</td>
+    <td>{{ entry.date }}</td>
+    <td>{{ entry.description }}</td>
+</tr>
+{% endfor %}
+</table>
+
+    <h1>ADD TRAVELS FOR {{current_user.username}}</h1>
+    <form method="POST" action="{{ url_for('travels') }}">
+        <input type="text" name="destination" placeholder="Destination" required>
+        <input type="date" name="date" required>
+        <input type="text" name="description" placeholder="Description" required>
+        <button type="submit">Submit</button>
+    </form>
+    
+{% endblock %}

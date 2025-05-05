@@ -1,5 +1,6 @@
 {% extends "layout.html" %}
 
 {% block content %}
-    <h1>Welcome to Wibsy {{username}}</h1>
+    <h1>Welcome to Wibsy, {{current_user.username}}. UID: {{current_user.id}}</h1>
+    <script src="{{ url_for('static', filename='home.js') }}" defer></script>
 {% endblock %}

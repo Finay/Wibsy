@@ -1,0 +1,29 @@
+{% extends "layout.html" %}
+
+{% block content %}
+    <h1>Hello {{current_user.username}}</h1>
+    <form method="POST" action="{{ url_for('friends_request') }}">
+        <input type="email" name="email" placeholder="Email" required>
+        <button type="submit">Request</button>
+    </form>
+    <h3>Your Friends:</h3>
+    <table>
+    {% for friend in friends %}
+    <tr>
+        <td>{{ friend.id }}</td>
+        <td>{{ friend.username }}</td>
+        <td>{{ friend.email }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+    <h3>Pending requests:</h3>
+    <table>
+        {% for req in pending %}
+        <tr>
+            <td>{{ req.id }}</td>
+            <td>{{ req.username }}</td>
+            <td>{{ req.email }}</td>
+        </tr>
+        {% endfor %}
+        </table>
+{% endblock %}

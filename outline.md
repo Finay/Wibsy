@@ -17,11 +17,11 @@ Backend
 1. Login system + User db
     - Start simple, more opt features later with db migration
     - Google stuff!
-    - userdb: id, name, profile, username?, password??
+    - userdb: id, name, username?, password??
 2. Friends
     - friendsdb: id, userid1, userid2, status
 3. Travel
-    - traveldb: userid, destination, date, description
+    - traveldb: userid, destination, date, description 
 4. Sharing
     - User can add and see friend plans (only when authorized)
 --- 
@@ -51,16 +51,7 @@ Home (Post-login)
     - Add friend
     - Logout
 
-Login
-- Google vs email signin option
-
-Register
-- Google vs email registration option
-
-Add friend
-
-
-Add travel
-
-
-Profile settings
+# Later features
+Profile & travel & friends editing
+Photo related stuff??
+Profile colors 
