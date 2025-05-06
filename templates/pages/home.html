@@ -1,6 +1,47 @@
-{% extends "layout.html" %}
+<!DOCTYPE html>
+<html lang="en">
 
-{% block content %}
-    <h1>Welcome to Wibsy, {{current_user.username}}. UID: {{current_user.id}}</h1>
-    <script src="{{ url_for('static', filename='home.js') }}" defer></script>
-{% endblock %}
+<head>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://accounts.google.com/gsi/client" async></script>
+    <script src="{{ url_for('static', filename='js/main.js') }}" defer></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/home.css') }}">
+    <script type="importmap">
+        {
+          "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.167.1/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.167.1/examples/jsm/"
+          }
+        }
+      </script>
+</head>
+
+<body>
+    <div id="menu-bar">
+        <div id="menu-options">
+            <div id="menu-toggle" class="menu-button">
+                Menu
+            </div>
+            <div id="dropdown-menu">
+                <div class="menu-button">
+                    Profile
+                </div>
+                <div class="menu-button">
+                    Settings
+                </div>
+                <div class="menu-button">
+                    Trip
+                </div>
+                <div class="menu-button">
+                    Logout
+                </div>
+            </div>
+        </div>
+    </div>
+    <div id="tjs-container">
+
+    </div>
+    <script type="module" src="{{ url_for('static', filename='js/home.js') }}"></script>
+</body>
+
+</html>

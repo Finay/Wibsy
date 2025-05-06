@@ -1,0 +1,56 @@
+#tjs-container {
+    height: 100vh;
+    width: 100vw;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+#menu-bar {
+    height: 100vh;
+    position: absolute;
+    right: 0;
+    top: 0;
+    z-index: 3;
+}
+
+#menu-options {
+    margin: 40px 20px;
+}
+
+.menu-button {
+    color: white;
+    font-size: xx-large;
+    padding: 12px 10px;
+    display: inline-block;
+    margin-right: auto;
+    line-height: 14px;
+}
+
+.menu-button:after {
+    content: "";
+    width: 1%;
+    height: 2px;
+    background-color: white;
+    display: inline-block;
+    border-radius: 1px;
+    transition: all 0.2s linear;
+    opacity: 0;
+}
+
+.menu-button:hover:after {
+    width: 100%;
+    opacity: 1;
+}
+
+
+#menu-toggle {
+    
+}
+
+#dropdown-menu {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+}
+

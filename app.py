@@ -37,7 +37,7 @@ db = SQLAlchemy(app)
 login_manager = LoginManager()
 login_manager.init_app(app)
 
-# User model
+
 class User(UserMixin, db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     username = db.Column(db.String(250), nullable=False)
@@ -62,7 +62,6 @@ class TravelEntry(db.Model):
 with app.app_context():
     db.create_all()
 
-
 client = WebApplicationClient(GOOGLE_CLIENT_ID)
 
 
@@ -70,7 +69,6 @@ def get_google_provider_cfg():
     return requests.get(GOOGLE_DISCOVERY_URL).json()
 
 
-# Flask-Login helper to retrieve a user from our db
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, user_id)
@@ -240,11 +238,11 @@ def travels():
         travel_entry = TravelEntry(
             user_id=current_user.id, 
             destination=destination, 
-            date=date, 
+            date=date,
             description=description
         )
 
-        db.session.add(travel_entry)
+        db.session.add(travel_entry) 
         db.session.commit()
         return redirect(url_for('travels'))
 
@@ -252,4 +250,7 @@ def travels():
 
 
 if __name__ == '__main__':
-    app.run(debug=True, ssl_context="adhoc")
+    if os.path.exists('certificate.pem') and os.path.exists('privatekey.pem'):
+        app.run(debug=True, ssl_context=('certificate.pem', 'privatekey.pem'))
+    else:
+        app.run(debug=True, ssl_context="adhoc")

@@ -29,7 +29,6 @@ Backend
 ## Stage 2
 3D UI
 - Low poly aesthetic + map
-- Flight animation?
 - Timeline
 - Multi in city??
 
@@ -55,3 +54,5 @@ Home (Post-login)
 Profile & travel & friends editing
 Photo related stuff??
 Profile colors 
+Flight animation 
+moon?
