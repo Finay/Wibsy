@@ -5,21 +5,101 @@
 <h1>Entries for: {{ user.username }}</h1>
 {% endif %}
 <table>
-{% for entry in travel_data %}
-<tr>
-    <td>{{ entry.destination }}</td>
-    <td>{{ entry.date }}</td>
-    <td>{{ entry.description }}</td>
-</tr>
-{% endfor %}
+    {% for entry in travel_data %}
+    <tr>
+        <td>{{ entry.country }}</td>
+        <td>{{ entry.state }}</td>
+        <td>{{ entry.latitude }}</td>
+        <td>{{ entry.longitude }}</td>
+        <td>{{ entry.date }}</td>
+        <td>{{ entry.description }}</td>
+    </tr>
+    {% endfor %}
 </table>
 
-    <h1>ADD TRAVELS FOR {{current_user.username}}</h1>
-    <form method="POST" action="{{ url_for('travels') }}">
-        <input type="text" name="destination" placeholder="Destination" required>
-        <input type="date" name="date" required>
-        <input type="text" name="description" placeholder="Description" required>
-        <button type="submit">Submit</button>
-    </form>
-    
+<h1>ADD TRAVELS FOR {{current_user.username}}</h1>
+<form method="POST" action="{{ url_for('travels') }}">
+    <div>
+        <label for="country">Country</label>
+        <select id="country" name="country">
+            <option>select country</option>
+        </select>
+    </div>
+
+    <div>
+        <label for="state">State</label>
+        <select id="state" name="state">
+            <option>_</option>
+        </select>
+    </div>
+
+
+    <input type="date" name="date" required>
+    <input type="text" name="description" placeholder="Description" required>
+    <button type="submit">Submit</button>
+</form>
+
+
+<script src="{{ url_for('static', filename='js/country-states.js') }}"></script>
+<script>
+
+
+    // user country code for selected option
+    var user_country_code = "IN";
+
+    (() => {
+        // script https://www.html-code-generator.com/html/drop-down/state-name
+
+        // Get the country name and state name from the imported script.
+        const country_list = country_and_states.country;
+        const state_list = country_and_states.states;
+
+        const id_state_option = document.getElementById("state");
+        const id_country_option = document.getElementById("country");
+
+        const create_country_selection = () => {
+            id_country_option.innerHTML = '';
+            let option = document.createElement('option');
+            option.innerText = 'select country';
+            option.setAttribute('value', '');
+            id_country_option.appendChild(option);
+            for (const country_code in country_list) {
+                // set selected option user country
+                // let selected = (country_code == user_country_code) ? ' selected' : '';
+                option = document.createElement('option');
+                option.innerText = country_list[country_code];
+                option.setAttribute('value', country_list[country_code]);
+                option.setAttribute('data-country-code', country_code);
+                id_country_option.appendChild(option);
+            }
+        };
+
+        const create_states_selection = () => {
+            // selected country code
+            let selected_country_code = id_country_option[id_country_option.selectedIndex].dataset.countryCode;
+            // get state names by selected country-code
+            let state_names = state_list[selected_country_code];
+
+            // if invalid country code
+            if (!state_names) {
+                id_state_option.innerHTML = '<option>select state</option>'; 
+                return;
+            }
+            // create option
+            let option = '';
+            option += '<option>select state</option>';
+            state_names.forEach(state => {
+                console.log(state);
+                option += '<option value="' + state.name + '">' + state.name + '</option>';
+            });
+            id_state_option.innerHTML = option;
+        };
+
+        // country select change event update state code
+        id_country_option.addEventListener('change', create_states_selection);
+
+        create_country_selection();
+        create_states_selection();
+    })();
+</script>
 {% endblock %}

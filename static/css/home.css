@@ -54,3 +54,57 @@
     justify-content: left;
 }
 
+#friends-bar {
+    position: absolute;
+    left: 0;
+    top: 0;
+    margin: 20vh 10vh;
+    height: 60vh;
+    width: 40vh;
+    border: 3px solid white;
+    border-radius: 2vh;
+    z-index: 3;
+}
+
+#fb-title {
+    margin-top: 2vh;
+    width: 100%;
+    color: white;
+    font-size: xx-large;
+    display: flex;
+    justify-content: center;
+}
+
+.friend-entry {
+    height: 8vh;
+    width: 100%;
+    margin: 2vh 4vh;
+    display: flex;
+}
+
+.friend-icon {
+    width: 4vh;
+    height: 4vh;
+    border: 0.5vh white solid;
+    border-radius: 50%;
+    margin-right: 2vh;
+}
+
+.friend-name {
+    padding: 1vh;
+    width: 80%;
+    color: white;
+    font-size: x-large;
+}
+
+.friend-entry:nth-child(3n) .friend-icon{
+    background-color: red;
+}
+
+.friend-entry:nth-child(3n+1) .friend-icon{
+    background-color: green;
+}
+
+.friend-entry:nth-child(3n+2) .friend-icon{
+    background-color: blue;
+}

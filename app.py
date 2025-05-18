@@ -4,7 +4,7 @@ import datetime
 import requests
 from oauthlib.oauth2 import WebApplicationClient
 
-from flask import Flask, redirect, request, url_for, render_template
+from flask import Flask, redirect, request, url_for, render_template, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import (
     LoginManager,
@@ -17,6 +17,7 @@ from flask_login import (
 
 from google.oauth2 import id_token
 from google.auth.transport.requests import Request as GoogleRequest
+import googlemaps
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -25,6 +26,7 @@ GOOGLE_CLIENT_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", None)
 GOOGLE_DISCOVERY_URL = (
     "https://accounts.google.com/.well-known/openid-configuration"
 )
+maps_client = googlemaps.Client(key=os.environ.get("GOOGLE_GEOCODE_API_KEY", None))
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 app = Flask(__name__)
@@ -55,7 +57,10 @@ class FriendEntry(db.Model):
 class TravelEntry(db.Model):
     id = db.Column(db.Integer(), primary_key=True)
     user_id = db.Column(db.Integer(), db.ForeignKey('user.id'))
-    destination = db.Column(db.String(100), nullable=False)
+    country = db.Column(db.String(50), nullable=False)
+    state = db.Column(db.String(50), nullable=False)
+    latitude = db.Column(db.Float(), nullable=False)
+    longitude = db.Column(db.Float(), nullable=False)
     date = db.Column(db.DateTime(), nullable=False)
     description = db.Column(db.String(200), nullable=True)
 
@@ -108,7 +113,7 @@ def register():
 def login():
     if current_user.is_authenticated:
         return redirect(url_for('home'))
-    
+
     if request.method == 'POST':
         email = request.form['email']
         password = request.form['password']
@@ -117,7 +122,7 @@ def login():
 
         if not user_query:
             return "No such email", 400
-        
+
         if user_query.password != password:
             return "Wrong password", 400
 
@@ -128,7 +133,7 @@ def login():
 
 
 @app.route("/login/callback", methods = ['GET', 'POST'])
-def gl_callback():    
+def gl_callback():
     try:
         idinfo = id_token.verify_oauth2_token(request.form['credential'], GoogleRequest(), GOOGLE_CLIENT_ID)
 
@@ -163,8 +168,8 @@ def logout():
 @app.route("/friends")
 @login_required
 def friends():
-    return render_template('pages/friends.html', 
-                           current_user=current_user, 
+    return render_template('pages/friends.html',
+                           current_user=current_user,
                            friends=[id_to_user(friend_id) for friend_id in get_friends_ids(current_user.id)],
                            pending=[id_to_user(req_id) for req_id in get_friends_request_ids(current_user.id)])
 
@@ -190,7 +195,7 @@ def friends_request():
 
     if not user_query:
         return "User not found", 400
-    
+
     comp = FriendEntry.query.filter_by(user_id=user_query.id, friend_id=current_user.id).first() # Check for incoming complementary request
     if comp and comp.status == 'pending':
         comp.status = 'accepted'
@@ -226,31 +231,71 @@ def travel_profile(user_id):
     return "Not authorized", 404
 
 
+@app.route("/travels/")
 @app.route("/travels", methods=['GET', 'POST'])
 @login_required
 def travels():
     if request.method == 'POST':
-        destination = request.form['destination']
+        country = request.form['country']
+        state = request.form['state']
         date = [int(i) for i in request.form['date'].split('-')]
         date = datetime.date(date[0], date[1], date[2])
         description = request.form['description']
 
+        # Get coordinates from Google Maps API
+        geocode_result = maps_client.geocode(f'{country}, {state}')
+        if not geocode_result:
+            return "Invalid destination", 400
+        # print(geocode_result)
+
+        location = geocode_result[0]['geometry']['location']
+
         travel_entry = TravelEntry(
-            user_id=current_user.id, 
-            destination=destination, 
+            user_id=current_user.id,
+            country=country,
+            state=state,
+            latitude=float(location['lat']),
+            longitude=float(location['lng']),
             date=date,
             description=description
         )
 
-        db.session.add(travel_entry) 
+        db.session.add(travel_entry)
         db.session.commit()
         return redirect(url_for('travels'))
 
     return render_template('pages/travels.html', travel_data=get_travel_data(current_user.id))
 
 
+@app.route('/fulldata')
+@login_required
+def fulldata():
+    fids = get_friends_ids(current_user.id);
+    prejson = []
+    for i, fid in enumerate(fids):
+        entry = {}
+        user = db.session.get(User, fid);
+        entry['fid'] = fid;
+        entry['username'] = user.username;
+        entry['email'] = user.email;
+        travels = []
+        travel_entries = get_travel_data(fid);
+        for travel_entry in travel_entries:
+            trip = {}
+            trip['country'] = travel_entry.country;
+            trip['state'] = travel_entry.state;
+            trip['latitude'] = travel_entry.latitude;
+            trip['longitude'] = travel_entry.longitude;
+            trip['date'] = travel_entry.date;
+            trip['description'] = travel_entry.description;
+            travels.append(trip)
+
+        entry['travels'] = travels;
+        prejson.append(entry);
+    return jsonify(prejson);
+
 if __name__ == '__main__':
     if os.path.exists('certificate.pem') and os.path.exists('privatekey.pem'):
-        app.run(debug=True, ssl_context=('certificate.pem', 'privatekey.pem'))
+        app.run(debug=True, ssl_context=('certificate.pem', 'privatekey.pem'), host='0.0.0.0', port=5001)
     else:
         app.run(debug=True, ssl_context="adhoc")
